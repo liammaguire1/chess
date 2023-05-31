@@ -1,6 +1,8 @@
 import pygame
 import os
 
+from pieces import *
+
 # Set window dimensions & caption
 WIDTH, HEIGHT = 512, 640
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -15,11 +17,7 @@ PINK = (234, 202, 252)
 ALMOND = (234, 221, 202)
 COFFEE = (111, 78, 55)
 
-FPS = 60
-
 def main():
-
-    clock = pygame.time.Clock()
     
     # List of dicts to store complete square data
     squares = []
@@ -51,7 +49,7 @@ def main():
             # Dict to be appended to 'squares' list
             sq_dict = {}
             sq_dict['location'] = square
-            sq_dict['rect'] = sq_rect
+            sq_dict['sq_rect'] = sq_rect
             
             # Initial placement of pieces
             if square in [(0,0), (0,7)]:
@@ -81,29 +79,50 @@ def main():
             else:
                 sq_dict['piece'] = None
 
+            # Create Rect for pieces
+            if sq_dict['piece']:
+                sq_dict['piece_rect'] = pygame.Rect(sq_dict['location'][1] * SQUARE_SIDE, sq_dict['location'][0] * SQUARE_SIDE + SQUARE_SIDE, PIECE_SIZE, PIECE_SIZE)
+            else:
+                sq_dict['piece_rect'] = None
+
+            # Append dict to list of all squares
             squares.append(sq_dict)
 
     
     # Main gameplay loop
     running = True
+    white = True
+    piece = None
+    
     while running:
         
-        # Set FPS
-        clock.tick(FPS)
-
         # Check for events
         for event in pygame.event.get():
             
+            mouse_pos = pygame.mouse.get_pos()
+
             # User closed window
             if event.type == pygame.QUIT:
                 running = False
 
-            # User clicked
             if event.type == pygame.MOUSEBUTTONDOWN:
-                square_click(squares)
+                
+                # Click on piece
+                for sq in squares:
+                    if sq['piece_rect']:
+                        if sq['piece_rect'].collidepoint(mouse_pos):
+                            piece = sq['piece_rect']
 
-        
-    
+            if event.type == pygame.MOUSEBUTTONUP:
+                if piece:
+                    lock_piece(piece)
+                piece = None
+
+        # Clicking pieces
+        if piece:
+            drag_piece(piece)
+            
+        # Draw on window
         draw_window(squares, PIECE_IMGS)       
 
     pygame.quit()
@@ -116,25 +135,27 @@ def draw_window(squares, images):
     
     # Draw squares
     for square in squares:
+        if (square['location'][0] + square['location'][1]) % 2 == 0:
+            pygame.draw.rect(WINDOW, ALMOND, square['sq_rect'])
+        else:
+            pygame.draw.rect(WINDOW, COFFEE, square['sq_rect'])
 
-            # Checkered coloring
-            if (square['location'][0] + square['location'][1]) % 2 == 0:
-                pygame.draw.rect(WINDOW, ALMOND, square['rect'])
-            else:
-                pygame.draw.rect(WINDOW, COFFEE, square['rect'])
-
-            if square['piece']:
-                WINDOW.blit(images[square['piece']], (square['location'][1] * SQUARE_SIDE, square['location'][0] * SQUARE_SIDE + SQUARE_SIDE))
-                
+    # Draw pieces
+    for square in squares:
+        if square['piece']:
+            WINDOW.blit(images[square['piece']], (square['piece_rect'].x, square['piece_rect'].y))
 
     pygame.display.update()
 
 
-def square_click(squares, first=True):
-    mouse = pygame.mouse.get_pos()
-    for sq in squares:
-        if sq['rect'].collidepoint(mouse):
-            print(sq['location'])
+def drag_piece(piece):
+    mouse_pos = pygame.mouse.get_pos()
+    piece.x = mouse_pos[0] - SQUARE_SIDE/2
+    piece.y = mouse_pos[1] - SQUARE_SIDE/2
+
+
+def lock_piece(piece):
+    return
 
 
 if __name__ == "__main__":
