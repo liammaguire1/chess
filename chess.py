@@ -42,51 +42,53 @@ def main():
     # Create square dicts
     for row in SQUARES:
         for square in row:
-            
-            # Square rect
-            sq_rect = pygame.Rect((square[1] * SQUARE_SIDE), (square[0] * SQUARE_SIDE + SQUARE_SIDE), SQUARE_SIDE, SQUARE_SIDE)
 
-            # Dict to be appended to 'squares' list
-            sq_dict = {}
-            sq_dict['location'] = square
-            sq_dict['sq_rect'] = sq_rect
+            # Create Square object
+            location = square
+            rect = pygame.Rect((square[1] * SQUARE_SIDE), (square[0] * SQUARE_SIDE + SQUARE_SIDE), SQUARE_SIDE, SQUARE_SIDE)
+            sq_ob = Square(location, rect)
             
             # Initial placement of pieces
             if square in [(0,0), (0,7)]:
-                sq_dict['piece'] = 'black-rook'
+                piece = 'black-rook'
             elif square in [(0,1), (0,6)]:
-                sq_dict['piece'] = 'black-knight'
+                piece = 'black-knight'
             elif square in [(0,2), (0,5)]:
-                sq_dict['piece'] = 'black-bishop'
+                piece = 'black-bishop'
             elif square == (0, 3):
-                sq_dict['piece'] = 'black-queen'
+                piece = 'black-queen'
             elif square == (0, 4):
-                sq_dict['piece'] = 'black-king'
+                piece = 'black-king'
             elif square[0] == 1:
-                sq_dict['piece'] = 'black-pawn'
+                piece = 'black-pawn'
             elif square in [(7,0), (7,7)]:
-                sq_dict['piece'] = 'white-rook'
+                piece = 'white-rook'
             elif square in [(7,1), (7,6)]:
-                sq_dict['piece'] = 'white-knight'
+                piece = 'white-knight'
             elif square in [(7,2), (7,5)]:
-                sq_dict['piece'] = 'white-bishop'
+                piece = 'white-bishop'
             elif square == (7, 3):
-                sq_dict['piece'] = 'white-queen'
+                piece = 'white-queen'
             elif square == (7, 4):
-                sq_dict['piece'] = 'white-king'
+                piece = 'white-king'
             elif square[0] == 6:
-                sq_dict['piece'] = 'white-pawn'
+                piece = 'white-pawn'
             else:
-                sq_dict['piece'] = None
+                piece = None
 
-            # Create Rect for pieces
-            if sq_dict['piece']:
-                sq_dict['piece_rect'] = pygame.Rect(sq_dict['location'][1] * SQUARE_SIDE, sq_dict['location'][0] * SQUARE_SIDE + SQUARE_SIDE, PIECE_SIZE, PIECE_SIZE)
+            # Create Piece object
+            if piece:
+                p_rect = pygame.Rect(sq_ob.location[1] * SQUARE_SIDE, sq_ob.location[0] * SQUARE_SIDE + SQUARE_SIDE, PIECE_SIZE, PIECE_SIZE)
+                p_name = piece[6:].capitalize()
+                white = True if piece[0] == 'w' else False
+                p_obj = eval(f'{p_name}("{piece}", {white})')
+                p_obj.rect = p_rect
             else:
-                sq_dict['piece_rect'] = None
+                p_obj = None
 
-            # Append dict to list of all squares
-            squares.append(sq_dict)
+            # Append Square object
+            sq_ob.piece = p_obj
+            squares.append(sq_ob)
 
     
     # Main gameplay loop
@@ -109,9 +111,9 @@ def main():
                 
                 # Click on piece
                 for sq in squares:
-                    if sq['piece_rect']:
-                        if sq['piece_rect'].collidepoint(mouse_pos):
-                            piece = sq['piece_rect']
+                    if sq.piece:
+                        if sq.piece.rect.collidepoint(mouse_pos):
+                            piece = sq.piece.rect
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if piece:
@@ -135,15 +137,15 @@ def draw_window(squares, images):
     
     # Draw squares
     for square in squares:
-        if (square['location'][0] + square['location'][1]) % 2 == 0:
-            pygame.draw.rect(WINDOW, ALMOND, square['sq_rect'])
+        if (square.location[0] + square.location[1]) % 2 == 0:
+            pygame.draw.rect(WINDOW, ALMOND, square.rect)
         else:
-            pygame.draw.rect(WINDOW, COFFEE, square['sq_rect'])
+            pygame.draw.rect(WINDOW, COFFEE, square.rect)
 
     # Draw pieces
     for square in squares:
-        if square['piece']:
-            WINDOW.blit(images[square['piece']], (square['piece_rect'].x, square['piece_rect'].y))
+        if square.piece:
+            WINDOW.blit(images[square.piece.name], (square.piece.rect.x, square.piece.rect.y))
 
     pygame.display.update()
 

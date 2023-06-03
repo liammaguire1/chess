@@ -1,23 +1,36 @@
-class Rook:
+class Square:
+    def __init__(self, location, rect, piece=None):
+        self.location = location
+        self.rect = rect
+        self.piece = piece
+
+class Piece:
+    def __init__(self, name, white, rect=None):
+        self.name = name
+        self.white = white
+        self.rect = rect
+        self.moved = False
+
+class Rook(Piece):
     def moves(self):
         return
 
-class Knight:
+class Knight(Piece):
     def moves(self):
         return
 
-class Bishop:
+class Bishop(Piece):
     def moves(self):
         return
 
-class Queen:
+class Queen(Piece):
     def moves(self):
         return
 
-class King:
+class King(Piece):
     def moves(self):
         return
 
-class Pawn:
+class Pawn(Piece):
     def moves(self):
         return
