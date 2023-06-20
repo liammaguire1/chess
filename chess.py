@@ -2,6 +2,7 @@ import pygame
 import os
 
 from pieces import *
+pygame.font.init()
 
 # Set window dimensions & caption
 WIDTH, HEIGHT = 512, 640
@@ -16,6 +17,11 @@ PIECE_SIZE = SQUARE_SIDE
 PINK = (234, 202, 252)
 ALMOND = (234, 221, 202)
 COFFEE = (111, 78, 55)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+
+# Font
+FONT = pygame.font.SysFont('timesnewroman', 40)
 
 def main():
     
@@ -39,7 +45,7 @@ def main():
             row.append(square)
         SQUARES.append(row)
 
-    # Create square dicts
+    # Create objects
     for row in SQUARES:
         for square in row:
 
@@ -80,8 +86,8 @@ def main():
             if piece:
                 p_rect = pygame.Rect(sq_ob.location[1] * SQUARE_SIDE, sq_ob.location[0] * SQUARE_SIDE + SQUARE_SIDE, PIECE_SIZE, PIECE_SIZE)
                 p_name = piece[6:].capitalize()
-                white = True if piece[0] == 'w' else False
-                p_obj = eval(f'{p_name}("{piece}", {white})')
+                color = 'white' if piece[0] == 'w' else 'black'
+                p_obj = eval(f'{p_name}("{piece}", "{color}")')
                 p_obj.rect = p_rect
             else:
                 p_obj = None
@@ -94,7 +100,8 @@ def main():
     # Main gameplay loop
     running = True
     white = True
-    piece = None
+    current_piece = None
+    current_square = None
     
     while running:
         
@@ -107,30 +114,35 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
+            # User clicked mouse button
             if event.type == pygame.MOUSEBUTTONDOWN:
                 
                 # Click on piece
                 for sq in squares:
                     if sq.piece:
-                        if sq.piece.rect.collidepoint(mouse_pos):
-                            piece = sq.piece.rect
+                        if white and sq.piece.color == 'white' or not white and sq.piece.color == 'black':
+                            if sq.piece.rect.collidepoint(mouse_pos):
+                                current_piece = sq.piece
+                                current_square = sq
 
+            # User released mouse button
             if event.type == pygame.MOUSEBUTTONUP:
-                if piece:
-                    lock_piece(piece)
-                piece = None
+                if current_piece:
+                    white = lock_piece(squares, current_piece, current_square, white)
+                current_piece = None
+                current_square = None
 
-        # Clicking pieces
-        if piece:
-            drag_piece(piece)
+        # Moving pieces
+        if current_piece:
+            drag_piece(current_piece)
             
         # Draw on window
-        draw_window(squares, PIECE_IMGS)       
+        draw_window(squares, PIECE_IMGS, white)       
 
     pygame.quit()
 
 
-def draw_window(squares, images):
+def draw_window(squares, images, white):
 
     # Set background color
     WINDOW.fill(PINK)
@@ -142,6 +154,16 @@ def draw_window(squares, images):
         else:
             pygame.draw.rect(WINDOW, COFFEE, square.rect)
 
+    # Draw header text
+    if white:
+        turn_text = "White to move..."
+        header_text = FONT.render(turn_text, 1, WHITE)
+    else:
+        turn_text = "Black to move..."
+        header_text = FONT.render(turn_text, 1, BLACK)
+
+    WINDOW.blit(header_text, (WIDTH * .25, 10))
+
     # Draw pieces
     for square in squares:
         if square.piece:
@@ -152,13 +174,35 @@ def draw_window(squares, images):
 
 def drag_piece(piece):
     mouse_pos = pygame.mouse.get_pos()
-    piece.x = mouse_pos[0] - SQUARE_SIDE/2
-    piece.y = mouse_pos[1] - SQUARE_SIDE/2
+    piece.rect.x = mouse_pos[0] - SQUARE_SIDE/2
+    piece.rect.y = mouse_pos[1] - SQUARE_SIDE/2
 
 
-def lock_piece(piece):
-    return
+def lock_piece(squares, piece, current_square, white):
+    mouse_pos = pygame.mouse.get_pos()
+    for sq in squares:
+        if sq.rect.collidepoint(mouse_pos):
 
+            # Invalid conditions
+            if sq.piece:
+                if sq.piece.color == piece.color:
+                    break
+            
+            # Update Square data after lock succeeded
+            for s in squares:
+                if s.piece == piece:
+                    s.piece = None
+            sq.piece = piece
+            
+            # Update visual representation of piece
+            piece.rect.x = sq.rect.x
+            piece.rect.y = sq.rect.y
+            return not white
+    
+    # Reset piece after lock failed
+    piece.rect.x = current_square.location[1] * SQUARE_SIDE
+    piece.rect.y = current_square.location[0] * SQUARE_SIDE + SQUARE_SIDE 
+    return white
 
 if __name__ == "__main__":
     main()

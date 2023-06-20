@@ -5,9 +5,9 @@ class Square:
         self.piece = piece
 
 class Piece:
-    def __init__(self, name, white, rect=None):
+    def __init__(self, name, color, rect=None):
         self.name = name
-        self.white = white
+        self.color = color
         self.rect = rect
         self.moved = False
 
