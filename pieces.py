@@ -52,7 +52,7 @@ class Pawn(Piece):
 
             # Capture
             if sq.piece:
-                if sq.piece.color != self.color and type(sq.piece) != King:
+                if sq.piece.color != self.color:
                     if sq.location[0] == location[0] - 1 and sq.location[1] in [location[1] - 1, location[1] + 1]:
                         moves.append(sq)
         return moves

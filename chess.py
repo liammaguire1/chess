@@ -111,9 +111,7 @@ def main():
         
         # Check for events
         for event in pygame.event.get():
-            
-            mouse_pos = pygame.mouse.get_pos()
-
+        
             # User closed window
             if event.type == pygame.QUIT:
                 running = False
@@ -125,6 +123,7 @@ def main():
                 for sq in squares:
                     if sq.piece:
                         if white and sq.piece.color == 'white' or not white and sq.piece.color == 'black':
+                            mouse_pos = pygame.mouse.get_pos()
                             if sq.piece.rect.collidepoint(mouse_pos):
                                 current_piece = sq.piece
                                 current_square = sq
@@ -133,7 +132,6 @@ def main():
             if event.type == pygame.MOUSEBUTTONUP:
                 if current_piece:
                     white, new_square = lock_piece(squares, current_piece, current_square, white, captured_pieces)
-                    print(captured_pieces)
                     
                     # Add valid move to list of played moves
                     if current_square != new_square:
@@ -185,9 +183,25 @@ def draw_window(squares, images, white, highlight_sqs, captured_pieces):
     WINDOW.blit(header_text, (WIDTH * .25, 10))
 
     # Draw captured pieces
+    drawn_pieces = []
     for piece in captured_pieces:
         if piece.color == 'white':
-            
+            if type(piece) == Pawn:
+                cap_rect = pygame.Rect(0, SQUARE_SIDE * 9, SQUARE_SIDE/2, SQUARE_SIDE/2)
+            else:
+                cap_rect = pygame.Rect(0, SQUARE_SIDE * 9.5, SQUARE_SIDE/2, SQUARE_SIDE/2)
+        else:
+            if type(piece) == Pawn:
+                cap_rect = pygame.Rect(SQUARE_SIDE * 4, SQUARE_SIDE * 9, SQUARE_SIDE/2, SQUARE_SIDE/2)
+            else:
+                cap_rect = pygame.Rect(SQUARE_SIDE * 4, SQUARE_SIDE * 9.5, SQUARE_SIDE/2, SQUARE_SIDE/2)
+        
+        while cap_rect.collidelist(drawn_pieces) != -1:
+            cap_rect.x += SQUARE_SIDE/2
+        
+        drawn_pieces.append(cap_rect)
+        small_piece = pygame.transform.scale(images[piece.name], (SQUARE_SIDE/2, SQUARE_SIDE/2))
+        WINDOW.blit(small_piece, (cap_rect.x, cap_rect.y))
 
     pygame.display.update()
 
