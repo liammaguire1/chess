@@ -26,8 +26,8 @@ FONT = pygame.font.SysFont('timesnewroman', 40)
 
 def main():
     
-    # List of dicts to store complete square data
-    squares = []
+    # Dict to store square data
+    squares = {}
 
     # Load piece images into a dict
     PIECE_IMGS = {}
@@ -40,63 +40,58 @@ def main():
     # Initialize 2D array of tuples to create board
     SQUARES = []
     for i in range(8):
-        row = []
         for j in range(8):
             square = (i, j)
-            row.append(square)
-        SQUARES.append(row)
+            SQUARES.append(square)
 
     # Create objects
-    for row in SQUARES:
-        for square in row:
+    for square in SQUARES:
 
-            # Create Square object
-            location = square
-            rect = pygame.Rect((square[1] * SQUARE_SIDE), (square[0] * SQUARE_SIDE + SQUARE_SIDE), SQUARE_SIDE, SQUARE_SIDE)
-            sq_ob = Square(location, rect)
-            
-            # Initial placement of pieces
-            if square in [(0,0), (0,7)]:
-                piece = 'black-rook'
-            elif square in [(0,1), (0,6)]:
-                piece = 'black-knight'
-            elif square in [(0,2), (0,5)]:
-                piece = 'black-bishop'
-            elif square == (0, 3):
-                piece = 'black-queen'
-            elif square == (0, 4):
-                piece = 'black-king'
-            elif square[0] == 1:
-                piece = 'black-pawn'
-            elif square in [(7,0), (7,7)]:
-                piece = 'white-rook'
-            elif square in [(7,1), (7,6)]:
-                piece = 'white-knight'
-            elif square in [(7,2), (7,5)]:
-                piece = 'white-bishop'
-            elif square == (7, 3):
-                piece = 'white-queen'
-            elif square == (7, 4):
-                piece = 'white-king'
-            elif square[0] == 6:
-                piece = 'white-pawn'
-            else:
-                piece = None
+        # Create Square object
+        rect = pygame.Rect((square[1] * SQUARE_SIDE), (square[0] * SQUARE_SIDE + SQUARE_SIDE), SQUARE_SIDE, SQUARE_SIDE)
+        sq_ob = Square(rect)
+        
+        # Initial placement of pieces
+        if square in [(0,0), (0,7)]:
+            piece = 'black-rook'
+        elif square in [(0,1), (0,6)]:
+            piece = 'black-knight'
+        elif square in [(0,2), (0,5)]:
+            piece = 'black-bishop'
+        elif square == (0, 3):
+            piece = 'black-queen'
+        elif square == (0, 4):
+            piece = 'black-king'
+        elif square[0] == 1:
+            piece = 'black-pawn'
+        elif square in [(7,0), (7,7)]:
+            piece = 'white-rook'
+        elif square in [(7,1), (7,6)]:
+            piece = 'white-knight'
+        elif square in [(7,2), (7,5)]:
+            piece = 'white-bishop'
+        elif square == (7, 3):
+            piece = 'white-queen'
+        elif square == (7, 4):
+            piece = 'white-king'
+        elif square[0] == 6:
+            piece = 'white-pawn'
+        else:
+            piece = None
 
-            # Create Piece object
-            if piece:
-                p_rect = pygame.Rect(sq_ob.location[1] * SQUARE_SIDE, sq_ob.location[0] * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
-                p_name = piece[6:].capitalize()
-                color = 'white' if piece[0] == 'w' else 'black'
-                p_obj = eval(f'{p_name}("{piece}", "{color}")')
-                p_obj.rect = p_rect
-            else:
-                p_obj = None
+        # Create Piece object
+        if piece:
+            p_rect = pygame.Rect(square[1] * SQUARE_SIDE, square[0] * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
+            p_name = piece[6:].capitalize()
+            color = 'white' if piece[0] == 'w' else 'black'
+            p_obj = eval(f'{p_name}("{piece}", "{color}")')
+            p_obj.rect = p_rect
+        else:
+            p_obj = None
 
-            # Append Square object
-            sq_ob.piece = p_obj
-            squares.append(sq_ob)
-
+        # Set key-value pairs to (i, j): Square
+        sq_ob.piece = p_obj
+        squares[square] = sq_ob
     
     # Persistent variables
     running = True
@@ -121,18 +116,18 @@ def main():
                 
                 # Click on piece
                 for sq in squares:
-                    if sq.piece:
-                        if white and sq.piece.color == 'white' or not white and sq.piece.color == 'black':
+                    if squares[sq].piece:
+                        if white and squares[sq].piece.color == 'white' or not white and squares[sq].piece.color == 'black':
                             mouse_pos = pygame.mouse.get_pos()
-                            if sq.piece.rect.collidepoint(mouse_pos):
-                                current_piece = sq.piece
+                            if squares[sq].piece.rect.collidepoint(mouse_pos):
+                                current_piece = squares[sq].piece
                                 current_square = sq
 
             # User released mouse button
             if event.type == pygame.MOUSEBUTTONUP:
                 if current_piece:
-                    white, new_square = lock_piece(squares, current_piece, current_square, white, captured_pieces)
-                    
+                    squares, white, new_square = lock_piece(squares, current_piece, current_square, white, captured_pieces)
+
                     # Add valid move to list of played moves
                     if current_square != new_square:
                         move = (current_piece, current_square, new_square)
@@ -149,29 +144,29 @@ def main():
     pygame.quit()
 
 
-def draw_window(squares, images, white, highlight_sqs, captured_pieces):
+def draw_window(squares, images, white, played_moves, captured_pieces):
 
     # Set background color
     WINDOW.fill(PINK)
     
     # Draw squares
-    for square in squares:
-        if (square.location[0] + square.location[1]) % 2 == 0:
-            pygame.draw.rect(WINDOW, ALMOND, square.rect)
+    for sq in squares:
+        if (sq[0] + sq[1]) % 2 == 0:
+            pygame.draw.rect(WINDOW, ALMOND, squares[sq].rect)
         else:
-            pygame.draw.rect(WINDOW, COFFEE, square.rect)
+            pygame.draw.rect(WINDOW, COFFEE, squares[sq].rect)
 
     # Highlight squares
-    for square in squares:
-        if highlight_sqs:
-            if square.location == highlight_sqs[-1][1].location or square.location == highlight_sqs[-1][2].location:
-                highlight_rect = pygame.Rect((7 - square.location[1]) * SQUARE_SIDE, (7 - square.location[0]) * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
+    for sq in squares:
+        if played_moves:
+            if sq == played_moves[-1][1] or sq == played_moves[-1][2]:
+                highlight_rect = pygame.Rect((7 - sq[1]) * SQUARE_SIDE, (7 - sq[0]) * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
                 pygame.draw.rect(WINDOW, ORANGE, highlight_rect)
 
     # Draw pieces
-    for square in squares:
-        if square.piece:
-            WINDOW.blit(images[square.piece.name], (square.piece.rect.x, square.piece.rect.y))
+    for sq in squares:
+        if squares[sq].piece:
+            WINDOW.blit(images[squares[sq].piece.name], (squares[sq].piece.rect.x, squares[sq].piece.rect.y))
 
     # Draw header text
     if white:
@@ -215,16 +210,16 @@ def drag_piece(piece):
 def lock_piece(squares, piece, current_square, white, captured_pieces):
     mouse_pos = pygame.mouse.get_pos()
     for sq in squares:
-        if sq.rect.collidepoint(mouse_pos):
+        if squares[sq].rect.collidepoint(mouse_pos):
 
             # All possible moves
-            moves = piece.moves(current_square.location, squares)
+            moves = piece.moves(current_square, squares)
             #for move in moves:
-            #    print(move.location)
+            #    print(move)
             
-            # Invalid: capturing same color
-            if sq.piece:
-                if sq.piece.color == piece.color:
+            # Invalid: capture same color
+            if squares[sq].piece:
+                if squares[sq].piece.color == piece.color:
                     break
 
             # Invalid: not an available move
@@ -232,41 +227,41 @@ def lock_piece(squares, piece, current_square, white, captured_pieces):
                 break
 
             # Capture a piece
-            if sq.piece:
-                captured_pieces.append(sq.piece)
-            
+            if squares[sq].piece:
+                captured_pieces.append(squares[sq].piece)
+                                    
             # Update Square data after lock succeeded
-            for s in squares:
-                if s.piece == piece:
-                    s.piece = None
-            sq.piece = piece
+            squares[current_square].piece = None
+            squares[sq].piece = piece
 
             # Update 'moved' status for piece
             piece.moved = True
             
             # Update visual representation of piece
-            piece.rect.x = sq.rect.x
-            piece.rect.y = sq.rect.y
+            piece.rect.x = squares[sq].rect.x
+            piece.rect.y = squares[sq].rect.y
 
             # Flip board and return
-            flip_board(squares)
-            return not white, sq
+            squares = flip_board(squares)
+            return squares, not white, sq
     
     # Reset piece after lock failed
-    piece.rect.x = current_square.location[1] * SQUARE_SIDE
-    piece.rect.y = current_square.location[0] * SQUARE_SIDE + SQUARE_SIDE 
-    return white, current_square
+    piece.rect.x = current_square[1] * SQUARE_SIDE
+    piece.rect.y = current_square[0] * SQUARE_SIDE + SQUARE_SIDE 
+    return squares, white, current_square
 
 
 def flip_board(squares):
-    s_copy = copy.deepcopy(squares)
-    s_copy.reverse()
-    for idx, s in enumerate(squares):
-        s.piece = s_copy[idx].piece
-        if s.piece:
-            s.piece.rect.x = s.rect.x
-            s.piece.rect.y = s.rect.y
-    return squares
+    s_new = {}
+    for sq in squares:
+        s_new[sq] = squares[(7 - sq[0], 7 - sq[1])]
+        s_new[sq].rect.x = 448 - squares[(7 - sq[0], 7 - sq[1])].rect.x
+        s_new[sq].rect.y = 576 - squares[(7 - sq[0], 7 - sq[1])].rect.y
+        
+        if s_new[sq].piece:
+            s_new[sq].piece.rect.x = 448 - squares[(7 - sq[0], 7 - sq[1])].piece.rect.x
+            s_new[sq].piece.rect.y = 576 - squares[(7 - sq[0], 7 - sq[1])].piece.rect.y
+    return s_new
 
 if __name__ == "__main__":
     main()
