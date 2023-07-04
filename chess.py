@@ -214,8 +214,7 @@ def lock_piece(squares, piece, current_square, white, captured_pieces):
 
             # All possible moves
             moves = piece.moves(current_square, squares)
-            #for move in moves:
-            #    print(move)
+            print(moves)
             
             # Invalid: capture same color
             if squares[sq].piece:
