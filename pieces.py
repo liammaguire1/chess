@@ -11,10 +11,10 @@ class Piece:
         self.moved = False
 
 class Rook(Piece):
-    def vision(self, squares, direction, key, iter, i=False):
+    def vision(self, squares, direction, key, iter, vert=False):
         moves = []
         while direction in range(8):
-            if i:
+            if vert:
                 k = (direction, key)
             else:
                 k = (key, direction)
@@ -33,25 +33,41 @@ class Rook(Piece):
     def moves(self, current_square, squares):
         moves = []
         # Down
-        moves = moves + self.vision(squares, current_square[0] + 1, current_square[1], 1, i=True)
+        moves += self.vision(squares, current_square[0] + 1, current_square[1], 1, vert=True)
         # Up
-        moves = moves + self.vision(squares, current_square[0] - 1, current_square[1], -1, i=True)
+        moves += self.vision(squares, current_square[0] - 1, current_square[1], -1, vert=True)
         # Left
-        moves = moves + self.vision(squares, current_square[1] - 1, current_square[0], -1)
+        moves += self.vision(squares, current_square[1] - 1, current_square[0], -1)
         # Right
-        moves = moves + self.vision(squares, current_square[1] + 1, current_square[0], 1)
+        moves += self.vision(squares, current_square[1] + 1, current_square[0], 1)
         return moves
 
 class Knight(Piece):
+    def vision(self, squares, square):
+        if square[0] in range(8) and square[1] in range(8):
+            if squares[square].piece:
+                if squares[square].piece.color != self.color:
+                    return [square]
+            else:
+                return [square]
+        return []
+    
     def moves(self, current_square, squares):
         moves = []
+        moves += self.vision(squares, (current_square[0] - 2, current_square[1] - 1))
+        moves += self.vision(squares, (current_square[0] - 2, current_square[1] + 1))
+        moves += self.vision(squares, (current_square[0] + 2, current_square[1] - 1))
+        moves += self.vision(squares, (current_square[0] + 2, current_square[1] + 1))
+        moves += self.vision(squares, (current_square[0] - 1, current_square[1] - 2))
+        moves += self.vision(squares, (current_square[0] + 1, current_square[1] - 2))
+        moves += self.vision(squares, (current_square[0] - 1, current_square[1] + 2))
+        moves += self.vision(squares, (current_square[0] + 1, current_square[1] + 2))
         return moves
 
 class Bishop(Piece):
     def vision(self, squares, i, j, i_iter, j_iter):
         moves = []
         while i in range(8) and j in range(8):
-
             if squares[(i, j)].piece:
                 if squares[(i, j)].piece.color != self.color:
                     moves.append((i, j))
@@ -67,18 +83,21 @@ class Bishop(Piece):
     def moves(self, current_square, squares):
         moves = []
         # Up-left
-        moves = moves + self.vision(squares, current_square[0] - 1, current_square[1] - 1, -1, -1)
+        moves += self.vision(squares, current_square[0] - 1, current_square[1] - 1, -1, -1)
         # Up-right
-        moves = moves + self.vision(squares, current_square[0] - 1, current_square[1] + 1, -1, 1)
+        moves += self.vision(squares, current_square[0] - 1, current_square[1] + 1, -1, 1)
         # Down-left
-        moves = moves + self.vision(squares, current_square[0] + 1, current_square[1] - 1, 1, -1)
+        moves += self.vision(squares, current_square[0] + 1, current_square[1] - 1, 1, -1)
         # Down-right
-        moves = moves + self.vision(squares, current_square[0] + 1, current_square[1] + 1, 1, 1)
+        moves += self.vision(squares, current_square[0] + 1, current_square[1] + 1, 1, 1)
         return moves
 
 class Queen(Piece):
     def moves(self, current_square, squares):
         moves = []
+        bishop = Bishop(name='bishop', color=self.color)
+        rook = Rook(name='rook', color=self.color)
+        moves += bishop.moves(current_square, squares) + rook.moves(current_square, squares)
         return moves
 
 class King(Piece):
