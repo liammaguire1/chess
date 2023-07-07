@@ -103,25 +103,35 @@ class Queen(Piece):
 class King(Piece):
     def moves(self, current_square, squares):
         moves = []
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if current_square[0] + i in range(8) and current_square[1] + j in range(8):
+                    if squares[(current_square[0] + i, current_square[1] + j)].piece:
+                        if squares[(current_square[0] + i, current_square[1] + j)].piece.color == self.color:
+                            continue
+                    moves.append((current_square[0] + i, current_square[1] + j))
         return moves
 
 class Pawn(Piece):
-    def moves(self, location, squares):
+    def moves(self, current_square, squares, played_moves):
         moves = []
-        for sq in squares:
-            
-            # Moving one square forward
-            if sq[0] == location[0] - 1 and sq[1] == location[1]:
-                moves.append(sq)
-
-            # Moving two squares if first move
+        # Move one square forward
+        if not squares[(current_square[0] - 1, current_square[1])].piece:
+            moves.append((current_square[0] - 1, current_square[1]))
+            # Move two squares forward
             if self.moved == False:
-                if sq[0] == location[0] - 2 and sq[1] == location[1]:
-                    moves.append(sq)
+                if not squares[(current_square[0] - 2, current_square[1])].piece:
+                    moves.append((current_square[0] - 2, current_square[1]))
 
-            # Capture
-            if squares[sq].piece:
-                if squares[sq].piece.color != self.color:
-                    if sq[0] == location[0] - 1 and sq[1] in [location[1] - 1, location[1] + 1]:
-                        moves.append(sq)
+        # Capture
+        for i in range(-1, 2, 2):
+            if current_square[0] - 1 in range(8) and current_square[1] + i in range(8):
+                if squares[(current_square[0] - 1, current_square[1] + i)].piece:
+                    if squares[(current_square[0] - 1, current_square[1] + i)].piece.color != self.color:
+                        moves.append((current_square[0] - 1, current_square[1] + i))
+
+        # En passant
+        if len(played_moves) > 0:
+            if type(played_moves[-1][0]) == Pawn and played_moves[-1][1][0] == 6 and played_moves[-1][2][0] == 4 and abs((7 - played_moves[-1][1][1]) - current_square[1]) == 1 and current_square[0] == 3:
+                moves.append((2, 7 - played_moves[-1][2][1]))
         return moves

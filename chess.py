@@ -126,7 +126,7 @@ def main():
             # User released mouse button
             if event.type == pygame.MOUSEBUTTONUP:
                 if current_piece:
-                    squares, white, new_square = lock_piece(squares, current_piece, current_square, white, captured_pieces)
+                    squares, white, new_square = lock_piece(squares, current_piece, current_square, white, captured_pieces, played_moves)
 
                     # Add valid move to list of played moves
                     if current_square != new_square:
@@ -207,13 +207,16 @@ def drag_piece(piece):
     piece.rect.y = mouse_pos[1] - SQUARE_SIDE/2
 
 
-def lock_piece(squares, piece, current_square, white, captured_pieces):
+def lock_piece(squares, piece, current_square, white, captured_pieces, played_moves):
     mouse_pos = pygame.mouse.get_pos()
     for sq in squares:
         if squares[sq].rect.collidepoint(mouse_pos):
 
             # All possible moves
-            moves = piece.moves(current_square, squares)
+            if type(piece) == Pawn:
+                moves = piece.moves(current_square, squares, played_moves)
+            else:
+                moves = piece.moves(current_square, squares)
             print(moves)
             
             # Invalid: capture same color
@@ -224,6 +227,11 @@ def lock_piece(squares, piece, current_square, white, captured_pieces):
             # Invalid: not an available move
             if sq not in moves:
                 break
+
+            # En passant capture
+            if type(piece) == Pawn and sq[1] != current_square[1] and not squares[sq].piece:
+                captured_pieces.append(squares[(sq[0] + 1, sq[1])].piece)
+                squares[(sq[0] + 1, sq[1])].piece = None
 
             # Capture a piece
             if squares[sq].piece:
