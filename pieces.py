@@ -32,6 +32,8 @@ class Rook(Piece):
 
     def moves(self, current_square, squares):
         moves = []
+        
+        # TODO make pretty
         # Down
         moves += self.vision(squares, current_square[0] + 1, current_square[1], 1, vert=True)
         # Up
@@ -54,14 +56,19 @@ class Knight(Piece):
     
     def moves(self, current_square, squares):
         moves = []
-        moves += self.vision(squares, (current_square[0] - 2, current_square[1] - 1))
-        moves += self.vision(squares, (current_square[0] - 2, current_square[1] + 1))
-        moves += self.vision(squares, (current_square[0] + 2, current_square[1] - 1))
-        moves += self.vision(squares, (current_square[0] + 2, current_square[1] + 1))
+        
+        # TODO make pretty
+        #for i in range(8):
+        #    print(i % 2 + 1)
+            
         moves += self.vision(squares, (current_square[0] - 1, current_square[1] - 2))
         moves += self.vision(squares, (current_square[0] + 1, current_square[1] - 2))
         moves += self.vision(squares, (current_square[0] - 1, current_square[1] + 2))
         moves += self.vision(squares, (current_square[0] + 1, current_square[1] + 2))
+        moves += self.vision(squares, (current_square[0] - 2, current_square[1] - 1))
+        moves += self.vision(squares, (current_square[0] + 2, current_square[1] - 1))
+        moves += self.vision(squares, (current_square[0] - 2, current_square[1] + 1))
+        moves += self.vision(squares, (current_square[0] + 2, current_square[1] + 1))
         return moves
 
 class Bishop(Piece):
@@ -82,6 +89,8 @@ class Bishop(Piece):
 
     def moves(self, current_square, squares):
         moves = []
+
+        # TODO make pretty
         # Up-left
         moves += self.vision(squares, current_square[0] - 1, current_square[1] - 1, -1, -1)
         # Up-right

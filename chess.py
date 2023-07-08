@@ -228,6 +228,10 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
             if sq not in moves:
                 break
 
+            # Invalid: in check
+            if check(squares, current_square, sq, piece, white, played_moves):
+                break
+
             # En passant capture
             if type(piece) == Pawn and sq[1] != current_square[1] and not squares[sq].piece:
                 captured_pieces.append(squares[(sq[0] + 1, sq[1])].piece)
@@ -269,6 +273,45 @@ def flip_board(squares):
             s_new[sq].piece.rect.x = 448 - squares[(7 - sq[0], 7 - sq[1])].piece.rect.x
             s_new[sq].piece.rect.y = 576 - squares[(7 - sq[0], 7 - sq[1])].piece.rect.y
     return s_new
+
+
+def check(squares, current_sq, new_sq, piece, white, played_moves):
+    
+    # Player to be checked
+    color = 'white' if white else 'black'
+    
+    # Copy board
+    board = copy.deepcopy(squares)
+
+    # Try move
+    board[current_sq].piece = None
+    board[new_sq].piece = piece
+
+    # Locate king
+    king = ()
+    for sq in board:
+        if board[sq].piece:
+            if type(board[sq].piece) == King and board[sq].piece.color == color:
+                king = (7 - sq[0], 7 - sq[1])
+
+    # Flip board
+    board = flip_board(board)
+
+    # Test if opposing pieces see king
+    for sq in board:
+        if board[sq].piece:
+            if white and board[sq].piece.color == 'black' or not white and board[sq].piece.color == 'white':
+                
+                # Vision of pieces
+                if type(board[sq].piece) == Pawn:
+                    vision = board[sq].piece.moves(sq, board, played_moves)
+                else:
+                    vision = board[sq].piece.moves(sq, board)
+
+                # King in vision
+                if king in vision:
+                    return True
+    return False
 
 if __name__ == "__main__":
     main()
