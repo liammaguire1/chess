@@ -112,6 +112,7 @@ class Queen(Piece):
 class King(Piece):
     def moves(self, current_square, squares):
         moves = []
+        # Normal movement
         for i in range(-1, 2):
             for j in range(-1, 2):
                 if current_square[0] + i in range(8) and current_square[1] + j in range(8):
@@ -119,6 +120,18 @@ class King(Piece):
                         if squares[(current_square[0] + i, current_square[1] + j)].piece.color == self.color:
                             continue
                     moves.append((current_square[0] + i, current_square[1] + j))
+
+        # Castling
+        if self.moved == False:
+            for i in range(-1, 2, 2):
+                j = current_square[1]
+                while j in range(1, 7):
+                    if squares[(7, j + i)].piece:
+                        if type(squares[(7, j + i)].piece) == Rook and squares[(7, j + i)].piece.color == self.color and squares[(7, j + i)].piece.moved == False:
+                            moves.append((7, current_square[1] + (i * 2))) 
+                        else:
+                            break
+                    j = j + i
         return moves
 
 class Pawn(Piece):

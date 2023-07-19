@@ -20,9 +20,11 @@ COFFEE = (111, 78, 55)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 ORANGE = (252, 196, 73)
+YELLOW = (255, 255, 156)
 
 # Font
-FONT = pygame.font.SysFont('timesnewroman', 40)
+FONT = pygame.font.SysFont('timesnewroman', 40, bold=True)
+BUTTONFONT = pygame.font.SysFont('timesnewroman', 18)
 
 def main():
     
@@ -89,13 +91,18 @@ def main():
         else:
             p_obj = None
 
-        # Set key-value pairs to (i, j): Square
+        # Set key-value pairs to '(i, j): Square'
         sq_ob.piece = p_obj
         squares[square] = sq_ob
+
+    # 'Draw' button
+    draw = pygame.Rect(SQUARE_SIDE/4, SQUARE_SIDE/4, SQUARE_SIDE, SQUARE_SIDE/2)
     
     # Persistent variables
     running = True
     white = True
+    game_over = 0
+    play_again = None
     current_piece = None
     current_square = None
     played_moves = []
@@ -114,19 +121,30 @@ def main():
             # User clicked mouse button
             if event.type == pygame.MOUSEBUTTONDOWN:
                 
+                mouse_pos = pygame.mouse.get_pos()
+                
+                # 'Draw' button
+                if draw.collidepoint(mouse_pos) and game_over == 0:
+                    game_over = 2
+
+                # 'Play again' button
+                if play_again:
+                    if play_again.collidepoint(mouse_pos):
+                        main()
+                
                 # Click on piece
-                for sq in squares:
-                    if squares[sq].piece:
-                        if white and squares[sq].piece.color == 'white' or not white and squares[sq].piece.color == 'black':
-                            mouse_pos = pygame.mouse.get_pos()
-                            if squares[sq].piece.rect.collidepoint(mouse_pos):
-                                current_piece = squares[sq].piece
-                                current_square = sq
+                if not game_over:
+                    for sq in squares:
+                        if squares[sq].piece:
+                            if white and squares[sq].piece.color == 'white' or not white and squares[sq].piece.color == 'black':
+                                if squares[sq].piece.rect.collidepoint(mouse_pos):
+                                    current_piece = squares[sq].piece
+                                    current_square = sq
 
             # User released mouse button
             if event.type == pygame.MOUSEBUTTONUP:
                 if current_piece:
-                    squares, white, new_square = lock_piece(squares, current_piece, current_square, white, captured_pieces, played_moves)
+                    squares, white, new_square, game_over = lock_piece(squares, current_piece, current_square, white, captured_pieces, played_moves)
 
                     # Add valid move to list of played moves
                     if current_square != new_square:
@@ -134,17 +152,21 @@ def main():
                         played_moves.append(move)
                 current_piece = None
         
-        # Moving pieces
+        # Move pieces
         if current_piece:
             drag_piece(current_piece)
-            
+
+        # 'Play again' button
+        if game_over > 0:
+            play_again = pygame.Rect(SQUARE_SIDE * 6, SQUARE_SIDE/4, SQUARE_SIDE * 1.5, SQUARE_SIDE/2)
+
         # Draw on window
-        draw_window(squares, PIECE_IMGS, white, played_moves, captured_pieces)       
+        draw_window(squares, PIECE_IMGS, white, played_moves, captured_pieces, game_over, draw, play_again)       
 
     pygame.quit()
 
 
-def draw_window(squares, images, white, played_moves, captured_pieces):
+def draw_window(squares, images, white, played_moves, captured_pieces, game_over, draw, play_again):
 
     # Set background color
     WINDOW.fill(PINK)
@@ -160,7 +182,10 @@ def draw_window(squares, images, white, played_moves, captured_pieces):
     for sq in squares:
         if played_moves:
             if sq == played_moves[-1][1] or sq == played_moves[-1][2]:
-                highlight_rect = pygame.Rect((7 - sq[1]) * SQUARE_SIDE, (7 - sq[0]) * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
+                if game_over in [1, 3]:
+                    highlight_rect = pygame.Rect((sq[1]) * SQUARE_SIDE, (sq[0]) * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
+                else:
+                    highlight_rect = pygame.Rect((7 - sq[1]) * SQUARE_SIDE, (7 - sq[0]) * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
                 pygame.draw.rect(WINDOW, ORANGE, highlight_rect)
 
     # Draw pieces
@@ -169,13 +194,30 @@ def draw_window(squares, images, white, played_moves, captured_pieces):
             WINDOW.blit(images[squares[sq].piece.name], (squares[sq].piece.rect.x, squares[sq].piece.rect.y))
 
     # Draw header text
-    if white:
-        turn_text = "White to move..."
-        header_text = FONT.render(turn_text, 1, WHITE)
+    player = 'White' if white else 'Black'
+    if game_over == 3:
+        turn_text = "  Stalemate!"
+    elif game_over == 2:
+        turn_text = "It's a draw!"
+    elif game_over == 1:
+        turn_text = f"{player} wins!"
     else:
-        turn_text = "Black to move..."
-        header_text = FONT.render(turn_text, 1, BLACK)
+        turn_text = f"{player} to move..."
+    header_text = FONT.render(turn_text, 1, eval(player.upper()))
     WINDOW.blit(header_text, (WIDTH * .25, 10))
+
+    # Draw 'Draw' button
+    draw_text = BUTTONFONT.render("Draw?", 1, BLACK)
+    pygame.draw.rect(WINDOW, YELLOW, draw, border_radius=8)
+    pygame.draw.rect(WINDOW, BLACK, draw, width=1, border_radius=8)
+    WINDOW.blit(draw_text, (draw.x + 8, draw.y + 4))
+
+    # Draw 'Play again' button
+    if play_again:
+        play_again_text = BUTTONFONT.render("Play Again?", 1, BLACK)
+        pygame.draw.rect(WINDOW, YELLOW, play_again, border_radius=8)
+        pygame.draw.rect(WINDOW, BLACK, play_again, width=1, border_radius=8)
+        WINDOW.blit(play_again_text, (play_again.x + 5, play_again.y + 4))
 
     # Draw captured pieces
     drawn_pieces = []
@@ -217,7 +259,7 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
                 moves = piece.moves(current_square, squares, played_moves)
             else:
                 moves = piece.moves(current_square, squares)
-            print(moves)
+            #print(moves)
             
             # Invalid: capture same color
             if squares[sq].piece:
@@ -231,6 +273,10 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
             # Invalid: in check
             if check(squares, current_square, sq, piece, white, played_moves):
                 break
+
+            # Castle
+            if type(piece) == King and abs(sq[1] - current_square[1]) == 2:
+                pass
 
             # En passant capture
             if type(piece) == Pawn and sq[1] != current_square[1] and not squares[sq].piece:
@@ -252,14 +298,24 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
             piece.rect.x = squares[sq].rect.x
             piece.rect.y = squares[sq].rect.y
 
+            # Test for checkmate
+            sq_copy = flip_board(copy.deepcopy(squares))            
+            if check(sq_copy, (7 - current_square[0], 7 - current_square[1]), (7 - sq[0], 7 - sq[1]), piece, not white, played_moves):
+                if mate(sq_copy, not white, played_moves):
+                    return squares, white, sq, 1
+            # Test for stalemate
+            else:
+                if mate(sq_copy, not white, played_moves):
+                    return squares, white, sq, 3
+            
             # Flip board and return
             squares = flip_board(squares)
-            return squares, not white, sq
+            return squares, not white, sq, 0
     
     # Reset piece after lock failed
     piece.rect.x = current_square[1] * SQUARE_SIDE
     piece.rect.y = current_square[0] * SQUARE_SIDE + SQUARE_SIDE 
-    return squares, white, current_square
+    return squares, white, current_square, 0
 
 
 def flip_board(squares):
@@ -281,37 +337,56 @@ def check(squares, current_sq, new_sq, piece, white, played_moves):
     color = 'white' if white else 'black'
     
     # Copy board
-    board = copy.deepcopy(squares)
+    squares = copy.deepcopy(squares)
 
     # Try move
-    board[current_sq].piece = None
-    board[new_sq].piece = piece
+    squares[current_sq].piece = None
+    squares[new_sq].piece = piece
 
     # Locate king
-    king = ()
-    for sq in board:
-        if board[sq].piece:
-            if type(board[sq].piece) == King and board[sq].piece.color == color:
+    for sq in squares:
+        if squares[sq].piece:
+            if type(squares[sq].piece) == King and squares[sq].piece.color == color:
                 king = (7 - sq[0], 7 - sq[1])
 
     # Flip board
-    board = flip_board(board)
+    squares = flip_board(copy.deepcopy(squares))
 
     # Test if opposing pieces see king
-    for sq in board:
-        if board[sq].piece:
-            if white and board[sq].piece.color == 'black' or not white and board[sq].piece.color == 'white':
+    for sq in squares:
+        if squares[sq].piece:
+            if white and squares[sq].piece.color == 'black' or not white and squares[sq].piece.color == 'white':
                 
                 # Vision of pieces
-                if type(board[sq].piece) == Pawn:
-                    vision = board[sq].piece.moves(sq, board, played_moves)
+                if type(squares[sq].piece) == Pawn:
+                    vision = squares[sq].piece.moves(sq, squares, played_moves)
                 else:
-                    vision = board[sq].piece.moves(sq, board)
+                    vision = squares[sq].piece.moves(sq, squares)
 
                 # King in vision
                 if king in vision:
                     return True
     return False
+
+
+def mate(squares, white, played_moves):
+    
+    for sq in squares:
+        if squares[sq].piece:
+            if white and squares[sq].piece.color == 'white' or not white and squares[sq].piece.color == 'black':
+                
+                # Available moves for piece
+                if type(squares[sq].piece) == Pawn:
+                    moves = squares[sq].piece.moves(sq, squares, played_moves)
+                else:
+                    moves = squares[sq].piece.moves(sq, squares)
+                
+                # Test if move removes check
+                for move in moves:
+                    if not check(squares, sq, move, squares[sq].piece, white, played_moves):
+                        return False
+    return True
+
 
 if __name__ == "__main__":
     main()
