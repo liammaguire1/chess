@@ -1,6 +1,7 @@
 import pygame
 import os
 import copy
+import statistics
 
 from pieces import *
 pygame.font.init()
@@ -274,9 +275,21 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
             if check(squares, current_square, sq, piece, white, played_moves):
                 break
 
-            # Castle
+            # Invalid: castling conditions
             if type(piece) == King and abs(sq[1] - current_square[1]) == 2:
-                pass
+                # Currently in check
+                if check(squares, current_square, current_square, piece, white, played_moves):
+                    break
+                # Adjacent square in check
+                elif check(squares, current_square, (sq[0], ((sq[1] + current_square[1]) / 2)), piece, white, played_moves):
+                    break
+                # Successful castle
+                else:
+                    rook_loc = (7, 7) if sq[1] - current_square[1] > 0 else (7, 0)
+                    squares[(sq[0], ((sq[1] + current_square[1]) / 2))].piece = squares[rook_loc].piece
+                    squares[(sq[0], ((sq[1] + current_square[1]) / 2))].piece.rect.x = squares[(sq[0], ((sq[1] + current_square[1]) / 2))].rect.x
+                    squares[(sq[0], ((sq[1] + current_square[1]) / 2))].piece.rect.y = squares[(sq[0], ((sq[1] + current_square[1]) / 2))].rect.y
+                    squares[rook_loc].piece = None
 
             # En passant capture
             if type(piece) == Pawn and sq[1] != current_square[1] and not squares[sq].piece:
