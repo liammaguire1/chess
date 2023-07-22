@@ -3,6 +3,7 @@ import os
 import copy
 
 from pieces import *
+
 pygame.font.init()
 
 # Set window dimensions & caption
@@ -294,7 +295,6 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
                 moves = piece.moves(current_square, squares, played_moves)
             else:
                 moves = piece.moves(current_square, squares)
-            print(moves)
             
             # Invalid: capture same color
             if squares[sq].piece:
