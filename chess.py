@@ -50,8 +50,7 @@ def main():
     for square in SQUARES:
 
         # Create Square object
-        rect = pygame.Rect((square[1] * SQUARE_SIDE), (square[0] * SQUARE_SIDE + SQUARE_SIDE), SQUARE_SIDE, SQUARE_SIDE)
-        sq_ob = Square(rect)
+        sq_ob = Square(pygame.Rect((square[1] * SQUARE_SIDE), (square[0] * SQUARE_SIDE + SQUARE_SIDE), SQUARE_SIDE, SQUARE_SIDE))
         
         # Initial placement of pieces
         if square in [(0,0), (0,7)]:
@@ -100,13 +99,13 @@ def main():
     # Persistent variables
     running = True
     white = True
-    game_over = 0
     promo = None
     play_again = None
     current_piece = None
     current_square = None
     played_moves = []
     captured_pieces = []
+    game_over = 0
     
     # Main gameplay loop
     while running:
@@ -137,6 +136,7 @@ def main():
                     for key in promo:
                         if key != 'box':
                             if promo[key].collidepoint(mouse_pos):
+                                # Create & place new piece
                                 color = 'white' if white else 'black'
                                 promo_piece = eval(f'{key.capitalize()}("{color}-{key}", "{color}")')
                                 promo_piece.rect = squares[played_moves[-1][2]].piece.rect
@@ -164,12 +164,13 @@ def main():
                         played_moves.append(move)
 
                     # Pawn promotion
-                    promo = {}
-                    promo['box'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE * 4)
-                    promo['queen'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
-                    promo['rook'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 2, SQUARE_SIDE, SQUARE_SIDE)
-                    promo['bishop'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 3, SQUARE_SIDE, SQUARE_SIDE)
-                    promo['knight'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 4, SQUARE_SIDE, SQUARE_SIDE)
+                    if game_over == -1:
+                        promo = {}
+                        promo['box'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE * 4)
+                        promo['queen'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
+                        promo['rook'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 2, SQUARE_SIDE, SQUARE_SIDE)
+                        promo['bishop'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 3, SQUARE_SIDE, SQUARE_SIDE)
+                        promo['knight'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 4, SQUARE_SIDE, SQUARE_SIDE)
                 current_piece = None
         
         # Move pieces
@@ -213,6 +214,7 @@ def draw_window(squares, images, current_piece, white, played_moves, captured_pi
         if squares[sq].piece:
             if squares[sq].piece != current_piece:
                 WINDOW.blit(images[squares[sq].piece.name], (squares[sq].piece.rect.x, squares[sq].piece.rect.y))
+    # Draw current piece
     if current_piece:
         WINDOW.blit(images[current_piece.name], (current_piece.rect.x, current_piece.rect.y))
 
