@@ -1,7 +1,6 @@
 import pygame
 import os
 import copy
-import statistics
 
 from pieces import *
 pygame.font.init()
@@ -84,11 +83,10 @@ def main():
 
         # Create Piece object
         if piece:
-            p_rect = pygame.Rect(square[1] * SQUARE_SIDE, square[0] * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
             p_name = piece[6:].capitalize()
             color = 'white' if piece[0] == 'w' else 'black'
             p_obj = eval(f'{p_name}("{piece}", "{color}")')
-            p_obj.rect = p_rect
+            p_obj.rect = pygame.Rect(square[1] * SQUARE_SIDE, square[0] * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
         else:
             p_obj = None
 
@@ -103,6 +101,7 @@ def main():
     running = True
     white = True
     game_over = 0
+    promo = None
     play_again = None
     current_piece = None
     current_square = None
@@ -132,6 +131,18 @@ def main():
                 if play_again:
                     if play_again.collidepoint(mouse_pos):
                         main()
+
+                # Pawn promotion pieces
+                if game_over == -1:
+                    for key in promo:
+                        if key != 'box':
+                            if promo[key].collidepoint(mouse_pos):
+                                color = 'white' if white else 'black'
+                                promo_piece = eval(f'{key.capitalize()}("{color}-{key}", "{color}")')
+                                promo_piece.rect = squares[played_moves[-1][2]].piece.rect
+                                squares[played_moves[-1][2]].piece = promo_piece
+                                squares, white = flip_board(squares), not white
+                                game_over = 0
                 
                 # Click on piece
                 if not game_over:
@@ -151,6 +162,14 @@ def main():
                     if current_square != new_square:
                         move = (current_piece, current_square, new_square)
                         played_moves.append(move)
+
+                    # Pawn promotion
+                    promo = {}
+                    promo['box'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE * 4)
+                    promo['queen'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
+                    promo['rook'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 2, SQUARE_SIDE, SQUARE_SIDE)
+                    promo['bishop'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 3, SQUARE_SIDE, SQUARE_SIDE)
+                    promo['knight'] = pygame.Rect(SQUARE_SIDE * new_square[1], SQUARE_SIDE * 4, SQUARE_SIDE, SQUARE_SIDE)
                 current_piece = None
         
         # Move pieces
@@ -162,12 +181,12 @@ def main():
             play_again = pygame.Rect(SQUARE_SIDE * 6, SQUARE_SIDE/4, SQUARE_SIDE * 1.5, SQUARE_SIDE/2)
 
         # Draw on window
-        draw_window(squares, PIECE_IMGS, white, played_moves, captured_pieces, game_over, draw, play_again)       
+        draw_window(squares, PIECE_IMGS, current_piece, white, played_moves, captured_pieces, game_over, draw, play_again, promo)       
 
     pygame.quit()
 
 
-def draw_window(squares, images, white, played_moves, captured_pieces, game_over, draw, play_again):
+def draw_window(squares, images, current_piece, white, played_moves, captured_pieces, game_over, draw, play_again, promo):
 
     # Set background color
     WINDOW.fill(PINK)
@@ -183,7 +202,7 @@ def draw_window(squares, images, white, played_moves, captured_pieces, game_over
     for sq in squares:
         if played_moves:
             if sq == played_moves[-1][1] or sq == played_moves[-1][2]:
-                if game_over in [1, 3]:
+                if game_over in [-1, 1, 3]:
                     highlight_rect = pygame.Rect((sq[1]) * SQUARE_SIDE, (sq[0]) * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
                 else:
                     highlight_rect = pygame.Rect((7 - sq[1]) * SQUARE_SIDE, (7 - sq[0]) * SQUARE_SIDE + SQUARE_SIDE, SQUARE_SIDE, SQUARE_SIDE)
@@ -192,7 +211,10 @@ def draw_window(squares, images, white, played_moves, captured_pieces, game_over
     # Draw pieces
     for sq in squares:
         if squares[sq].piece:
-            WINDOW.blit(images[squares[sq].piece.name], (squares[sq].piece.rect.x, squares[sq].piece.rect.y))
+            if squares[sq].piece != current_piece:
+                WINDOW.blit(images[squares[sq].piece.name], (squares[sq].piece.rect.x, squares[sq].piece.rect.y))
+    if current_piece:
+        WINDOW.blit(images[current_piece.name], (current_piece.rect.x, current_piece.rect.y))
 
     # Draw header text
     player = 'White' if white else 'Black'
@@ -206,6 +228,16 @@ def draw_window(squares, images, white, played_moves, captured_pieces, game_over
         turn_text = f"{player} to move..."
     header_text = FONT.render(turn_text, 1, eval(player.upper()))
     WINDOW.blit(header_text, (WIDTH * .25, 10))
+
+    # Draw promotion box
+    if game_over == -1:
+        for key in promo:
+            if key == 'box':
+                pygame.draw.rect(WINDOW, YELLOW, promo[key])
+                pygame.draw.rect(WINDOW, BLACK, promo[key], width=3)
+            else:
+                p_name = f"{player.lower()}-{key}"
+                WINDOW.blit(images[p_name], (promo[key]))
 
     # Draw 'Draw' button
     draw_text = BUTTONFONT.render("Draw?", 1, BLACK)
@@ -260,7 +292,7 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
                 moves = piece.moves(current_square, squares, played_moves)
             else:
                 moves = piece.moves(current_square, squares)
-            #print(moves)
+            print(moves)
             
             # Invalid: capture same color
             if squares[sq].piece:
@@ -310,6 +342,10 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
             # Update visual representation of piece
             piece.rect.x = squares[sq].rect.x
             piece.rect.y = squares[sq].rect.y
+
+            # Pawn promotion
+            if sq[0] == 0 and type(piece) == Pawn:
+                return squares, white, sq, -1
 
             # Test for checkmate
             sq_copy = flip_board(copy.deepcopy(squares))            
