@@ -5,6 +5,7 @@ import copy
 from pieces import *
 
 pygame.font.init()
+pygame.mixer.init()
 
 # Set window dimensions & caption
 WIDTH, HEIGHT = 512, 640
@@ -23,9 +24,14 @@ WHITE = (255, 255, 255)
 ORANGE = (252, 196, 73)
 YELLOW = (255, 255, 156)
 
-# Font
+# Fonts
 FONT = pygame.font.SysFont('timesnewroman', 40, bold=True)
 BUTTONFONT = pygame.font.SysFont('timesnewroman', 18)
+
+# Sounds
+MOVE_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'move-self.mp3'))
+CAPTURE_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'capture.mp3'))
+WIN_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'success.mp3'))
 
 def main():
     
@@ -35,10 +41,11 @@ def main():
     # Load piece images into a dict
     PIECE_IMGS = {}
     for img in os.listdir('Assets'):
-        piece_img = pygame.image.load(os.path.join('Assets', img))
-        piece_img = pygame.transform.scale(piece_img, (SQUARE_SIDE, SQUARE_SIDE))
-        name = img[:(len(img)-4)]
-        PIECE_IMGS[name] = piece_img
+        if img[-1] == 'g':
+            piece_img = pygame.image.load(os.path.join('Assets', img))
+            piece_img = pygame.transform.scale(piece_img, (SQUARE_SIDE, SQUARE_SIDE))
+            name = img[:(len(img)-4)]
+            PIECE_IMGS[name] = piece_img
 
     # Initialize 2D array of tuples to create board
     SQUARES = []
@@ -144,6 +151,7 @@ def main():
                                 squares[played_moves[-1][2]].piece = promo_piece
                                 squares, white = flip_board(squares), not white
                                 game_over = 0
+                                MOVE_SOUND.play()
                 
                 # Click on piece
                 if not game_over:
@@ -329,10 +337,14 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
             if type(piece) == Pawn and sq[1] != current_square[1] and not squares[sq].piece:
                 captured_pieces.append(squares[(sq[0] + 1, sq[1])].piece)
                 squares[(sq[0] + 1, sq[1])].piece = None
+                CAPTURE_SOUND.play()
 
             # Capture a piece
             if squares[sq].piece:
                 captured_pieces.append(squares[sq].piece)
+                CAPTURE_SOUND.play()
+            else:
+                MOVE_SOUND.play()
                                     
             # Update Square data after lock succeeded
             squares[current_square].piece = None
@@ -353,6 +365,7 @@ def lock_piece(squares, piece, current_square, white, captured_pieces, played_mo
             sq_copy = flip_board(copy.deepcopy(squares))            
             if check(sq_copy, (7 - current_square[0], 7 - current_square[1]), (7 - sq[0], 7 - sq[1]), piece, not white, played_moves):
                 if mate(sq_copy, not white, played_moves):
+                    WIN_SOUND.play()
                     return squares, white, sq, 1
             # Test for stalemate
             else:
