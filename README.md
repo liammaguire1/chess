@@ -1,6 +1,9 @@
 # Pygame Chess 
-This project is a two-player chess game built using the Pygame library. Players can enjoy a full chess match with standard rules. The game is designed with Python classes to represent pieces, each with specific methods for movement, capturing, and game logic.  
+This project is a two-player chess game built using the Pygame library. The game is designed with Python classes to represent pieces, each with specific methods for movement, capturing, and game logic.  
 You can play the game here: [Pygame Chess on Itch.io](https://liammaguire.itch.io/chess)
+
+## Gameplay Preview
+![Gameplay Preview](Assets/Gameplay.gif)
 
 ## Features
 - Two-player local chess game
